@@ -1,0 +1,32 @@
+﻿@page "{id:int}"
+@model ECommerceApp.WebApp.Pages.Orders.DetailsModel
+
+<div class="container mt-5">
+    <h2>Order Details</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Order ID:</strong> @Model.Order.Id</p>
+            <p><strong>Date:</strong> @Model.Order.OrderDate.ToShortDateString()</p>
+            <p><strong>Total Amount:</strong> @Model.Order.TotalAmount.ToString("C")</p>
+        </div>
+    </div>
+    <h3>Items</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Order.OrderItems)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Quantity</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <a asp-page="/Orders/Index" class="btn btn-secondary">Back to Orders</a>
+</div>

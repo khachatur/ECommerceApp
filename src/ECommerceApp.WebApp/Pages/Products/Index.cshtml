@@ -1,0 +1,46 @@
+﻿@page
+@model IndexModel
+
+@{
+    ViewData["Title"] = "Product Management";
+}
+
+<h2>Products</h2>
+
+<a asp-page="/Products/Create">Create New Product</a>
+
+@if (Model.Products == null || !Model.Products.Any())
+{
+    <p>No products found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model.Products)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Description</td>
+                    <td>@product.Price</td>
+                    <td>@product.Quantity</td>
+                    <td>@product.CategoryId</td>
+                    <td>
+                        <a asp-page="./Edit" asp-route-id="@product.Id">Edit</a> |
+                        <a asp-page="./Delete" asp-route-id="@product.Id">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

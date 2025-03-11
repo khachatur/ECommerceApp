@@ -1,0 +1,37 @@
+﻿@page
+@model ECommerceApp.WebApp.Pages.Orders.IndexModel
+
+<div class="container mt-5">
+    <h2>Your Orders</h2>
+    <a asp-page="/Orders/Create" class="btn btn-success mb-3">Create New Order</a>
+    @if (Model.Orders.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Total Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model.Orders)
+                {
+                    <tr>
+                        <td>@order.Id</td>
+                        <td>@order.OrderDate.ToShortDateString()</td>
+                        <td>@order.TotalAmount.ToString("C")</td>
+                        <td>
+                            <a asp-page="/Orders/Details" asp-route-id="@order.Id" class="btn btn-sm btn-primary">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p class="alert alert-info">You have no orders yet.</p>
+    }
+</div>

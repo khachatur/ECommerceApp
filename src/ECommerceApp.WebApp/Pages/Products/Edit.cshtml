@@ -1,0 +1,58 @@
+﻿@page "{id:int}"
+@model EditModel
+@{
+    ViewData["Title"] = "Edit Product";
+}
+
+<br />
+<h2>Edit Product</h2>
+<br />
+<div class="row">
+	<div class="col-md-4">
+		<form method="post">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<input type="hidden" asp-for="Product.Id" />
+			<div class="form-group">
+				<label asp-for="Product.Name" class="form-label" class="form-label"></label>
+				<input asp-for="Product.Name" class="form-control" />
+				<span asp-validation-for="Product.Name" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Product.Description" class="form-label"></label>
+				<textarea asp-for="Product.Description" class="form-control"></textarea>
+				<span asp-validation-for="Product.Description" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Product.Price" class="form-label"></label>
+				<input asp-for="Product.Price" class="form-control" />
+				<span asp-validation-for="Product.Price" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Product.Quantity" class="form-label"></label>
+				<input asp-for="Product.Quantity" class="form-control" />
+				<span asp-validation-for="Product.Quantity" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Product.CategoryId">Category</label>
+				<select asp-for="Product.CategoryId" asp-items="Model.CategoryOptions" class="form-select">
+					<option>Select Category</option>
+				</select>
+				<span asp-validation-for="Product.CategoryId" class="text-danger"></span>
+			</div>
+			<br />
+			<div class="form-group">
+				<input type="submit" value="Save" class="btn btn-primary" />
+				<a asp-page="./Index" class="btn btn-success">Back to List</a>
+			</div>
+		</form>
+	</div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+	<div class="text-danger">@Model.ErrorMessage</div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,35 @@
+﻿@page
+@model ECommerceApp.WebApp.Pages.IndexModel
+@{
+	ViewData["Title"] = "Home page";
+}
+
+<div class="container mt-5">
+    <h1>Welcome to ECommerceApp</h1>
+    <div class="row">
+        @foreach (var product in Model.Products)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@product.Name</h5>
+                        <p class="card-text">@product.Description</p>
+                        <p class="card-text"><strong>Price:</strong> @product.Price.ToString("C")</p>
+                        <p class="card-text"><strong>In Stock:</strong> @product.Quantity</p>
+                        <p class="card-text"><strong>Category:</strong> @product.CategoryName</p>
+                    </div>
+                    <div class="card-footer">
+                        @if (product.Quantity > 0)
+                        {
+                            <a asp-page-handler="Buy" asp-route-productId="@product.Id" class="btn btn-primary">Buy Now</a>
+                        }
+                        else
+                        {
+                            <span class="text-danger">Out of Stock</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
