@@ -1,110 +1,67 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-using System.Text.Json;
+﻿using System.ComponentModel.DataAnnotations;
+using ECommerceApp.WebApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace ECommerceApp.WebApp.Areas.Identity.Pages.Account
+namespace ECommerceApp.WebApp.Areas.Identity.Pages.Account;
+public class RegisterModel : PageModel
 {
-    public class RegisterModel : PageModel
+    private readonly IAuthService _authService;
+    private readonly ILogger<RegisterModel> _logger;
+
+    public RegisterModel(IAuthService authService, ILogger<RegisterModel> logger)
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<LoginModel> _logger;
+        _authService = authService;
+        _logger = logger;
+        Input = new InputModel();
+        ReturnUrl = string.Empty;
+    }
 
+    [BindProperty]
+    public InputModel Input { get; set; }
 
-        public RegisterModel(
-            IHttpClientFactory clientFactory, IConfiguration configuration, ILogger<LoginModel> logger)
+    public string ReturnUrl { get; set; }
+
+    public class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public void OnGet(string? returnUrl)
+    {
+        ReturnUrl = returnUrl ?? Url.Content("~/");
+    }
+
+    public async Task<IActionResult> OnPostAsync(string? returnUrl)
+    {
+        returnUrl ??= Url.Content("~/");
+
+        if (ModelState.IsValid)
         {
-            _clientFactory = clientFactory;
-            _configuration = configuration;
-            _logger = logger;
-        }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        [BindProperty]
-        public InputModel Input { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public string ReturnUrl { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public class InputModel
-        {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [EmailAddress]
-            [Display(Name = "Email")]
-            public string Email { get; set; }
-
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
-            [DataType(DataType.Password)]
-            [Display(Name = "Password")]
-            public string Password { get; set; }
-
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-            public string ConfirmPassword { get; set; }
-        }
-
-
-        public void OnGet(string returnUrl = null)
-        {
-            ReturnUrl = returnUrl;
-        }
-
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-        {
-            returnUrl ??= Url.Content("~/");
-
-            if (ModelState.IsValid)
+            var success = await _authService.RegisterAsync(Input.Email, Input.Password, Input.ConfirmPassword);
+            if (success)
             {
-                var client = _clientFactory.CreateClient();
-                var loginData = new { Input.Email, Input.Password, Input.ConfirmPassword };
-                var content = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
-
-                var apiUrl = _configuration["ApiBaseUrl"];
-                var response = await client.PostAsync($"{apiUrl}/api/Auth/register", content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    _logger.LogInformation("User registered.");
-                    return LocalRedirect(returnUrl);
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, response.StatusCode.ToString());
-                }
+                _logger.LogInformation("User registered.");
+                return LocalRedirect(returnUrl);
             }
-
-            // If we got this far, something failed, redisplay form
-            return Page();
+            ModelState.AddModelError(string.Empty, "Registration failed.");
         }
+
+        return Page();
     }
 }
+

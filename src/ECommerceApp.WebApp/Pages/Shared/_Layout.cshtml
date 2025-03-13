@@ -1,5 +1,5 @@
-﻿@using System.IdentityModel.Tokens.Jwt
-@using System.Security.Claims
+﻿@using ECommerceApp.WebApp.Services
+@inject IUserService UserService
 
 <!DOCTYPE html>
 <html lang="en">
@@ -24,27 +24,30 @@
 					<ul class="navbar-nav flex-grow-1">
 						<li class="nav-item">
 						</li>
-						<li class="nav-item">
-							<a class="nav-link text-dark" asp-page="/Orders/Index">Orders</a>
-						</li>
-						<li>
-							@{
-								var jwtToken = Context.Session.GetString("JwtToken");
-								bool isAdmin = false;
-								if (!string.IsNullOrEmpty(jwtToken))
-								{
-									var tokenHandler = new JwtSecurityTokenHandler();
-									var token = tokenHandler.ReadJwtToken(jwtToken);
-									isAdmin = token.Claims.Any(c => c.Type == "role" && c.Value == "Admin");
-								}
-							}
-							@if (isAdmin)
-							{
+						@{
+							var userInfo = await UserService.GetCurrentUserAsync(Context);
+							var isAuthenticated = userInfo != null;
+							var isAdmin = isAuthenticated && userInfo?.Roles.Contains("Admin") == true;
+						}
+						@if (isAuthenticated)
+						{
 							<li class="nav-item">
-								<a class="nav-link text-dark" asp-page="/Products/Index">Manage Products</a>
+								<a class="nav-link" asp-page="/Orders/Index">Orders</a>
 							</li>
-							}
-						</li>
+						}
+						@if (isAdmin)
+						{
+							<li class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" href="#" id="adminDropdown" data-bs-toggle="dropdown">
+									Admin
+								</a>
+								<ul class="dropdown-menu" aria-labelledby="adminDropdown">
+									<li><a class="dropdown-item" asp-page="/Users/Index">Manage Users</a></li>
+									<li><a class="dropdown-item" asp-page="/Products/Index">Manage Products</a></li>
+									<li><a class="dropdown-item" asp-page="/Orders/Index">Manage Orders</a></li>
+								</ul>
+							</li>
+						}
 					</ul>
 					<partial name="_LoginPartial" />
 				</div>

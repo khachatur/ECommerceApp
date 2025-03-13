@@ -1,136 +1,71 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
-using System.Text;
-using Microsoft.AspNetCore.Authentication;
+﻿using System.ComponentModel.DataAnnotations;
+using ECommerceApp.WebApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace ECommerceApp.WebApp.Areas.Identity.Pages.Account
+namespace ECommerceApp.WebApp.Areas.Identity.Pages.Account;
+
+public class LoginModel : PageModel
 {
-    public class LoginModel : PageModel
+    private readonly IAuthService _authService;
+    private readonly ILogger<LoginModel> _logger;
+
+    public LoginModel(IAuthService authService, ILogger<LoginModel> logger)
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private readonly IConfiguration _configuration;
-        private readonly ILogger<LoginModel> _logger;
+        _authService = authService;
+        _logger = logger;
+        Input = new InputModel();
+        ReturnUrl = string.Empty;
+        ErrorMessage = string.Empty;
+    }
 
-        public LoginModel(IHttpClientFactory clientFactory, IConfiguration configuration, ILogger<LoginModel> logger)
+    [BindProperty]
+    public InputModel Input { get; set; }
+
+    public string ReturnUrl { get; set; }
+
+    [TempData]
+    public string ErrorMessage { get; set; }
+
+    public class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+
+    public void OnGet(string? returnUrl)
+    {
+        if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            _clientFactory = clientFactory;
-            _configuration = configuration;
-            _logger = logger;
+            ModelState.AddModelError(string.Empty, ErrorMessage);
         }
+        ReturnUrl = returnUrl ?? Url.Content("~/");
+    }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        [BindProperty]
-        public InputModel Input { get; set; }
+    public async Task<IActionResult> OnPostAsync(string? returnUrl)
+    {
+        returnUrl ??= Url.Content("~/");
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public string ReturnUrl { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        [TempData]
-        public string ErrorMessage { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public class InputModel
+        if (ModelState.IsValid)
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [EmailAddress]
-            public string Email { get; set; }
-
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [DataType(DataType.Password)]
-            public string Password { get; set; }
-
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Display(Name = "Remember me?")]
-            public bool RememberMe { get; set; }
-        }
-
-        public void OnGet(string returnUrl = null)
-        {
-            if (!string.IsNullOrEmpty(ErrorMessage))
+            var token = await _authService.LoginAsync(Input.Email, Input.Password, Input.RememberMe);
+            if (!string.IsNullOrEmpty(token))
             {
-                ModelState.AddModelError(string.Empty, ErrorMessage);
+                HttpContext.Session.SetString("JwtToken", token);
+                _logger.LogInformation("User logged in.");
+                return LocalRedirect(returnUrl);
             }
-
-            returnUrl ??= Url.Content("~/");
-
-
-            ReturnUrl = returnUrl;
+            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
         }
 
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-        {
-            returnUrl ??= Url.Content("~/");
-
-            if (ModelState.IsValid)
-            {
-                var client = _clientFactory.CreateClient();
-                var loginData = new { Input.Email, Input.Password, Input.RememberMe };
-                var content = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
-
-                var apiUrl = _configuration["ApiBaseUrl"];
-                var response = await client.PostAsync($"{apiUrl}/api/Auth/login", content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(jsonResponse);
-                    if (doc.RootElement.TryGetProperty("token", out var tokenElement))
-                    {
-                        var token = tokenElement.GetString();
-                        if (!string.IsNullOrEmpty(token))
-                        {
-                            // Store the JWT token in session
-                            HttpContext.Session.SetString("JwtToken", token);
-
-                            _logger.LogInformation("User logged in.");
-                            return LocalRedirect(returnUrl); 
-                        }
-                    }
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                }
-            }
-
-            // If we got this far, something failed, redisplay form
-            return Page();
-        }
+        return Page();
     }
 }

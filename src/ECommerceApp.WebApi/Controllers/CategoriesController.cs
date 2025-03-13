@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.Features.Categories.Queries;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.WebApi.Controllers;
